@@ -370,10 +370,10 @@ int main(int argc, char const *argv[])
       oled_buffer_update();
       sleep(1);
       index++;
-      if(index > 20)
-      {
-        break;
-      }
+      //if(index > 20)
+      //{
+      //  break;
+      //}
     }
     printf("end");
     fflush(stdout);
