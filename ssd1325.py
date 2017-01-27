@@ -41,7 +41,7 @@ SSD1325_SETVSL= 0xBF
 SSD1325_GFXACCEL= 0x23
 SSD1325_DRAWRECT= 0x24
 SSD1325_COPY= 0x25
-
+SSD1325_DISPLAYOFF		 = 0xAE # Display OFF (sleep mode)
 
 DISPLAY_WIDTH   = 128 # X
 DISPLAY_HEIGHT  = 64  # Y fix to SSD1325
@@ -228,7 +228,7 @@ class spibus():
 		self.delay100ms(); #delay for the reset
 		#LCD_RS = 1;
 		self.gpiosetbits(4);   #RESET FINISH
-		self.oled_write_command(SSD1305_DISPLAYOFF); #ok
+		self.oled_write_command(SSD1325_DISPLAYOFF); #ok
 		self.oled_write_command(SSD1325_SETCLOCK); # set osc division */
 		self.oled_write_command(0xF1); # 145 */
 		self.oled_write_command(SSD1325_SETMULTIPLEX ); # multiplex ratio */
@@ -274,7 +274,7 @@ class spibus():
 		self.oled_write_command(SSD1325_NORMALDISPLAY); # set display mode */
 		self.delay100ms();
 
-		self.oled_write_command(SSD1305_DISPLAYON);
+		self.oled_write_command(SSD1325_DISPLAYON);
 
 
 
@@ -312,7 +312,6 @@ spibus0.write_pixel(5,3,'F')
 spibus0.write_pixel(5,4,'F')
 spibus0.write_pixel(5,5,'F')
 
-spibus0.write_string(7, 2, 'Lumbi la masca')
 if len(sys.argv) > 1:
 	spibus0.write_string(2, 12, sys.argv[1])
 spibus0.oled_buffer_update()
