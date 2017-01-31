@@ -102,6 +102,11 @@ class spibus():
 
 	#Allow to change DCX and RST.
 	def setGpios(self, dcx, dcx_pio, rst, rst_pio):
+		global SSD1325_DCX
+		global SSD1325_RST
+		global DCX_GPIO
+		global RST_GPIO
+
 		SSD1325_DCX	= dcx
 		SSD1325_RST	= rst
 
