@@ -21,6 +21,10 @@ spibus0.gpioexport(69, 'C5')
 spibus0.gpioexport(70, 'C6')
 spibus0.gpioexport(71, 'C7')
 
+spibus0.gpiosetdir('C5',"out");
+spibus0.gpiosetdir('C6',"out");
+spibus0.gpiosetdir('C7',"out");
+
 spibus0.gpioclearbits('C5')
 spibus0.gpioclearbits('C6')
 spibus0.gpioclearbits('C7')
