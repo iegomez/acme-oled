@@ -10,8 +10,8 @@ Create a new bus:
 spibus0 = spibus(32766,0)
 ```
 
-```python
 Initialize the screen:
+```python
 spibus0.oled_init()
 ```
 
@@ -37,7 +37,7 @@ spibus0.write_string(X, Y, string)
 
 Write a paragraph separated by "\n":
 ```python
-text = "This is the first line of the paragraph.\nThis is the second one.""
+text = "This is the first line of the paragraph.\nThis is the second one."
 spibus0.write_paragraph(text)
 ```
 
