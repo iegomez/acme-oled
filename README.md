@@ -51,3 +51,6 @@ Scroll if necessary:
 if spibus0.yCursor > 64:
 	spibus0.setVerticalScroll(0x00, 3, 2, 200)
 ```
+
+##License
+This code has no license at all. Feel free to copy, edit and use in any place.
