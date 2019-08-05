@@ -49,7 +49,7 @@ spibus0.spi_write_80()
 
 Scroll if necessary:
 ```python
-if spibus0.yCursor > 64:
+if spibus0.y_cursor > 64:
 	spibus0.set_vertical_scroll(0x00, 3, 2, 200)
 ```
 
