@@ -1,6 +1,7 @@
 # acme-oled
 
 ## Summary
+
 This library is a port of other libraries written in C and Python for this type of screen. It adds some funcionalities not present in Python simple libraries, and also ports some present on C libraries. More important, almost all libraries target the Raspberry Pi, Arduino or even BeagleBone Black, while there seems to be a lack of support for Acme Systems boards. This library targets the Aria G25 specifically, but can be easily adapted to any other (not only Acme ones) by changing some settings.
 
 ## Example usage:
@@ -17,7 +18,7 @@ spibus0.oled_init()
 
 Set overflow modes to control how to present long lines.
 ```python
-spibus0.setOverflowMode(1, 1)
+spibus0.set_overflow_mode(1, 1)
 ```
 
 Write a pixel:
@@ -49,8 +50,9 @@ spibus0.spi_write_80()
 Scroll if necessary:
 ```python
 if spibus0.yCursor > 64:
-	spibus0.setVerticalScroll(0x00, 3, 2, 200)
+	spibus0.set_vertical_scroll(0x00, 3, 2, 200)
 ```
 
 ##License
-This code has no license at all. Feel free to copy, edit and use in any place.
+
+acme-oled is distributed under the MIT license.

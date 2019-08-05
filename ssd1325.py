@@ -17,7 +17,7 @@ SSD1325_SETROWADDR= 0x75
 SSD1325_SETCONTRAST= 0x81
 SSD1325_SETCURRENT= 0x84
 SSD1325_SETREMAP= 0xA0
-SSD1325_SETSTARTLINE= 0xA1
+SSD1325_set_start_line= 0xA1
 SSD1325_SETOFFSET= 0xA2
 SSD1325_NORMALDISPLAY= 0xA4
 SSD1325_DISPLAYALLON= 0xA5
@@ -91,17 +91,17 @@ class spibus():
 
 	#Set the bus, device and speed.
 	#For this screen, speed is 4 MHz.
-	def __init__(self,bus,device):
+	def __init__(self, bus, device):
 		self.spi = spidev.SpiDev()
 		self.spi.open(bus, device)
 		self.spi.max_speed_hz = 4000000
-		self.xCursor = 0
-		self.yCursor = 0
+		self.x_cursor = 0
+		self.y_cursor = 0
 		self.OVERFLOW_X_MODE = 0
 		self.OVERFLOW_Y_MODE = 0
 
 	#Allow to change DCX and RST.
-	def setGpios(self, dcx, dcx_pio, rst, rst_pio):
+	def set_gpios(self, dcx, dcx_pio, rst, rst_pio):
 		global SSD1325_DCX
 		global SSD1325_RST
 		global DCX_GPIO
@@ -114,13 +114,13 @@ class spibus():
 		RST_GPIO = dcx_rst
 
 	#Set overflow modes.
-	def setOverflowMode(self, xMode, yMode):
-		self.OVERFLOW_X_MODE = xMode
-		self.OVERFLOW_Y_MODE = yMode
+	def set_overflow_mode(self, x_mode, y_mode):
+		self.OVERFLOW_X_MODE = x_mode
+		self.OVERFLOW_Y_MODE = y_mode
 
 	#Send a single byte of data.
-	def sendByte(self, data):
-		self.spi.writebytes([data])
+	def send_byte(self, data):
+		self.spi.write_bytes([data])
 
 	#Delay in milliseconds.
 	def delay(self, interval):
@@ -128,26 +128,26 @@ class spibus():
 		time.sleep(dNum)
 
 	#Export which pin corresponds to a gpio.
-	def gpioexport(self, pin, gpioid):
+	def gpio_export(self, pin, gpioid):
 		if not path.isdir('/sys/class/gpio/pio' + gpioid):
 			f = open("/sys/class/gpio/export","wb")
 			f.write(str(pin))
 			f.close()
 
 	#Set communication direction for a gpio.
-	def gpiosetdir(self, gpioid, mode):
+	def gpio_set_dir(self, gpioid, mode):
 		f = open("/sys/class/gpio/pio" + gpioid + "/direction", "wb")
 		f.write(mode)
 		f.close()
 
 	#Set high to gpio (1)
-	def gpiosetbits(self, gpioid):
+	def gpio_set_bits(self, gpioid):
 		f = open("/sys/class/gpio/pio" + gpioid + "/value", "wb")
 		f.write("1")
 		f.close()
 
 	#Set low to gpio (0)
-	def gpioclearbits(self, gpioid):
+	def gpio_clear_bits(self, gpioid):
 		f = open("/sys/class/gpio/pio" + gpioid + "/value", "wb")
 		f.write("0")
 		f.close()
@@ -155,25 +155,25 @@ class spibus():
 	#Write a single byte command:
 	#To tell the screen that incoming info is a command, DCX must be set to low.
 	def oled_write_command(self, command):
-		self.gpioclearbits(DCX_GPIO)
-		self.sendByte(command)
+		self.gpio_clear_bits(DCX_GPIO)
+		self.send_byte(command)
 
 	#Write a single byte of data:
 	#To tell the screen that incoming info is data, DCX must be set to high.
 	def oled_write_data(self, data):
-		self.gpiosetbits(DCX_GPIO)
-		self.sendByte(data)
+		self.gpio_set_bits(DCX_GPIO)
+		self.send_byte(data)
 
 	#Write the whole buffer to the screen.
 	def spi_write_buffer(self):
-		self.gpiosetbits(DCX_GPIO)
-		self.spi.writebytes(display_buffer)
+		self.gpio_set_bits(DCX_GPIO)
+		self.spi.write_bytes(display_buffer)
 
 	def spi_write_80(self):
-		self.gpiosetbits(DCX_GPIO)
-		self.spi.writebytes(display_buffer[0:4096])
-		self.spi.writebytes(display_buffer[4096:5120])
-		self.gpioclearbits(DCX_GPIO)
+		self.gpio_set_bits(DCX_GPIO)
+		self.spi.write_bytes(display_buffer[0:4096])
+		self.spi.write_bytes(display_buffer[4096:5120])
+		self.gpio_clear_bits(DCX_GPIO)
 
 	#Clear the screen by setting the buffer to 0x00s and writing it.
 	def oled_clear_display(self):
@@ -189,67 +189,67 @@ class spibus():
 	def write_paragraph(self, paragraph):
 		words = paragraph.split("\n")
 		for word in words:
-			self.xCursor = 0
-			if self.yCursor > 0:
-				self.yCursor += 3
-			self.write_string(self.xCursor, self.yCursor, word)
+			self.x_cursor = 0
+			if self.y_cursor > 0:
+				self.y_cursor += 3
+			self.write_string(self.x_cursor, self.y_cursor, word)
 
 	#Write a whole string by writing every char.
 	#Handle overflows.
 	def write_string(self, X, Y, word):
 
-		wLength = len(word)
-		startPos = X
+		w_length = len(word)
+		start_pos = X
 
 		if self.OVERFLOW_X_MODE == 0:
 
-			for k in range(0, wLength):
-				self.write_char(startPos, Y, word[k])
-				startPos += CHAR_WIDTH + 1
+			for k in range(0, w_length):
+				self.write_char(start_pos, Y, word[k])
+				start_pos += CHAR_WIDTH + 1
 
 		elif self.OVERFLOW_X_MODE == 1:
 
-			currentY = Y
-			for k in range(0, wLength):
-				self.write_char(startPos, currentY, word[k])
-				startPos += CHAR_WIDTH + 1
-				if startPos > DISPLAY_WIDTH - CHAR_WIDTH - 1:
+			current_y = Y
+			for k in range(0, w_length):
+				self.write_char(start_pos, current_y, word[k])
+				start_pos += CHAR_WIDTH + 1
+				if start_pos > DISPLAY_WIDTH - CHAR_WIDTH - 1:
 
-					startPos = X
-					currentY += CHAR_HEIGHT + 2
+					start_pos = X
+					current_y += CHAR_HEIGHT + 2
 
 
 		elif self.OVERFLOW_X_MODE == 2:
-			currentY = Y
-			currentXspace = -1
-			currentKspace = -1
+			current_y = Y
+			current_x_space = -1
+			current_k_space = -1
 			k = 0
-			while k < wLength:
+			while k < w_length:
 				if word[k] == " ":
-					currentXspace = startPos
-					currentKspace = k
-				self.write_char(startPos, currentY, word[k])
-				startPos += CHAR_WIDTH + 1
-				if startPos > DISPLAY_WIDTH - CHAR_WIDTH - 1:
-					startPos = X
-					currentY += CHAR_HEIGHT + 2
+					current_x_space = start_pos
+					current_k_space = k
+				self.write_char(start_pos, current_y, word[k])
+				start_pos += CHAR_WIDTH + 1
+				if start_pos > DISPLAY_WIDTH - CHAR_WIDTH - 1:
+					start_pos = X
+					current_y += CHAR_HEIGHT + 2
 					#Check if there was a space and if current or next chars are spaces.
-					if currentXspace > 0:
-						if word[k] != " " and (k+1) < wLength and word[k+1] != " ":
+					if current_x_space > 0:
+						if word[k] != " " and (k+1) < w_length and word[k+1] != " ":
 
 							#Go back to the space, clear extra chars and continue writing on next line from word[k+1].
-							#Also, uncheck currentXspace
+							#Also, uncheck current_x_space
 
-							k = currentKspace + 1
+							k = current_k_space + 1
 
-							#Clear everything from currentXspace forward on previous line:
-							previousY = currentY - (CHAR_HEIGHT + 2)
-							while currentXspace < DISPLAY_WIDTH:
+							#Clear everything from current_x_space forward on previous line:
+							previous_y = current_y - (CHAR_HEIGHT + 2)
+							while current_x_space < DISPLAY_WIDTH:
 
-								self.write_char(currentXspace, previousY, ' ')
-								currentXspace += CHAR_WIDTH + 1
+								self.write_char(current_x_space, previous_y, ' ')
+								current_x_space += CHAR_WIDTH + 1
 
-							currentXspace = -1
+							current_x_space = -1
 
 						else:
 							k += 1
@@ -292,11 +292,11 @@ class spibus():
 		#We assume X even and set the lowest bits [3:0].
 		#If X is odd, we set the highest bits [7:4].
 		#The remaining half is set to 0 so it doesn't change anything when an OR operation is executed.
-		setStr = '0x0' + scale
+		set_str = '0x0' + scale
 		if X%2 == 1:
-			setStr = '0x' + scale + '0'
+			set_str = '0x' + scale + '0'
 
-		chByte = int(setStr, 16)
+		ch_byte = int(set_str, 16)
 
 		#As we want to write, we first must clear the position:
 		clStr = '0xF0'
@@ -309,40 +309,40 @@ class spibus():
 		display_buffer[pos] &= clByte
 
 		#A simple OR with the current byte will set the relevant half.
-		display_buffer[pos] |= chByte
+		display_buffer[pos] |= ch_byte
 
-		self.xCursor = X
-		self.yCursor = Y
+		self.x_cursor = X
+		self.y_cursor = Y
 
 	#Sets start line (given by byte) for scrolling.
-	def setStartLine(self, byte):
+	def set_start_line(self, byte):
 		self.oled_write_command(0xA1)
 		self.oled_write_command(byte)
 
 
 	#Scroll an amount of rows vertically in a given direction every "interval" milliseconds.
-	def setVerticalScroll(self, direction, rows, interval, delayTime):
+	def set_vertical_scroll(self, direction, rows, interval, delayTime):
 		#Directions:
 		# 0x00: Bottom to top.
 		# 0x01: Top to bottom.
 		if direction == 0x00:
 			i = 0
 			while i < 64:
-				self.setStartLine(i)
+				self.set_start_line(i)
 				for j in range(0, interval):
 					self.delay(delayTime)
 				i += rows
 		else:
 			i = 0
 			while i < 64:
-				self.setStartLine(64-i)
+				self.set_start_line(64-i)
 				for j in range(0, interval):
 					self.delay(delayTime)
 				i += rows
-		self.setStartLine(0x00)
+		self.set_start_line(0x00)
 
-	def setHorizontalScroll(self, cols, rows, interval, delayTime):
-		self.GA_Option(0x03)
+	def set_horizontal_scroll(self, cols, rows, interval, delayTime):
+		self.ga_option(0x03)
 		self.oled_write_command(0x26)
 		self.oled_write_command(cols)
 		self.oled_write_command(rows)
@@ -350,31 +350,31 @@ class spibus():
 		self.oled_write_command(0x2F)
 		self.delay(delayTime)
 
-	def GA_Option(self, opt):
+	def ga_option(self, opt):
 		self.oled_write_command(0x23)
 		self.oled_write_command(opt)
 
 	#Stop scroll mode.
-	def stopScroll(self):
+	def stop_scroll(self):
 		self.oled_write_command(0x2E)
 
 	#Initialization commands for ssd1325 oled screen. Please check datasheet for details.
 	def oled_init(self):
 
-		self.gpioexport(SSD1325_DCX, DCX_GPIO);	#EXPORT DATA COMAND OLED
-		self.gpioexport(SSD1325_RST, RST_GPIO);	#EXPORT RESET OLED
-		self.gpiosetdir(DCX_GPIO,"out");  #DATA COMAND OUTPUTPIN
-		self.gpiosetdir(RST_GPIO,"out");  #RESET	 OUTPUTPIN
+		self.gpio_export(SSD1325_DCX, DCX_GPIO);	#EXPORT DATA COMAND OLED
+		self.gpio_export(SSD1325_RST, RST_GPIO);	#EXPORT RESET OLED
+		self.gpio_set_dir(DCX_GPIO,"out");  #DATA COMAND OUTPUTPIN
+		self.gpio_set_dir(RST_GPIO,"out");  #RESET	 OUTPUTPIN
 
 		#LCD_DC = 0;
-		self.gpioclearbits(DCX_GPIO); #DATA COMAND LOW 
+		self.gpio_clear_bits(DCX_GPIO); #DATA COMAND LOW 
 	  	#LCD_CS = 0;
-		#gpioclearbits(SSD1325_CS);  #CHIP SELECT LOW
+		#gpio_clear_bits(SSD1325_CS);  #CHIP SELECT LOW
 		#LCD_RS = 0;
-		self.gpioclearbits(RST_GPIO); #RESET INIT
+		self.gpio_clear_bits(RST_GPIO); #RESET INIT
 		self.delay(100); #delay for the reset
 		#LCD_RS = 1;
-		self.gpiosetbits(RST_GPIO);   #RESET FINISH
+		self.gpio_set_bits(RST_GPIO);   #RESET FINISH
 		self.oled_write_command(SSD1325_DISPLAYOFF); #ok
 		self.oled_write_command(SSD1325_SETCLOCK); # set osc division */
 		self.oled_write_command(0xF1); # 145 */
@@ -382,7 +382,7 @@ class spibus():
 		self.oled_write_command(0x3f); # duty = 1/64 */
 		self.oled_write_command( SSD1325_SETOFFSET); # set display offset --- */
 		self.oled_write_command(0x4C); # 76 */
-		self.oled_write_command(SSD1325_SETSTARTLINE); #set start line */
+		self.oled_write_command(SSD1325_set_start_line); #set start line */
 		self.oled_write_command(0x00); # ------ */
 		self.oled_write_command(SSD1325_MASTERCONFIG); #Set Master Config DC/DC Converter*/
 		self.oled_write_command(0x02);
